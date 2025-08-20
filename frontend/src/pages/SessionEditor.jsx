@@ -19,6 +19,7 @@ export default function SessionEditor() {
     const currentSaveRef = useRef(null);
     const loadedRef = useRef(false);
 
+    // Fetch session if editing
     useEffect(() => {
         if (id) {
             api.get(`/sessions/my-sessions/${id}`).then((res) => {
@@ -30,6 +31,8 @@ export default function SessionEditor() {
                 loadedRef.current = true;
             });
         } else {
+            // New session: reset form
+            setForm({ title: "", tags: "", json_file_url: "" });
             loadedRef.current = true;
         }
     }, [id]);
@@ -84,6 +87,7 @@ export default function SessionEditor() {
 
                 if (!id) {
                     setId(res.data._id);
+                    // Update URL without reloading
                     navigate(`/editor/${res.data._id}`, { replace: true });
                 }
 
@@ -129,6 +133,13 @@ export default function SessionEditor() {
 
             await api.post("/sessions/my-sessions/publish", { id });
             showToast("Session published", "success");
+
+            // Reset form and id for new session
+            setForm({ title: "", tags: "", json_file_url: "" });
+            setId(null);
+            loadedRef.current = true;
+
+            // Redirect to My Sessions page
             navigate("/my-sessions");
         } catch {
             showToast("Publish failed", "error");
@@ -159,7 +170,9 @@ export default function SessionEditor() {
 
                 {/* Tags */}
                 <div className="flex flex-col">
-                    <label className="text-sm font-medium text-gray-600 mb-1">Tags (comma separated)</label>
+                    <label className="text-sm font-medium text-gray-600 mb-1">
+                        Tags (comma separated)
+                    </label>
                     <input
                         type="text"
                         placeholder="e.g. javascript, react, api"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/api";
 import Loader from "../components/Loader";
@@ -6,35 +6,61 @@ import Loader from "../components/Loader";
 export default function MySessions() {
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
-    useEffect(() => {
-        api.get("/sessions/my-sessions")
-            .then((res) => setSessions(res.data))
-            .finally(() => setLoading(false));
+    const fetchSessions = useCallback(async () => {
+        setLoading(true);
+        try {
+            const res = await api.get("/sessions/my-sessions");
+            setSessions(res.data);
+        } catch (err) {
+            console.error("Failed to fetch sessions:", err);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    if (loading) {
-        return <Loader />;
-    }
+    useEffect(() => {
+        fetchSessions();
+    }, [fetchSessions]);
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await fetchSessions();
+        setRefreshing(false);
+    };
+
+    if (loading) return <Loader />;
 
     return (
         <div className="p-6 max-w-6xl mx-auto">
             {/* Header */}
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-3xl font-bold text-gray-800">My Sessions</h2>
-                <Link
-                    to="/editor"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition-all"
-                >
-                    + New Session
-                </Link>
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg shadow-sm transition"
+                    >
+                        {refreshing ? "Refreshing..." : "Refresh"}
+                    </button>
+                    <Link
+                        to="/editor"
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg shadow-md transition-all"
+                    >
+                        + New Session
+                    </Link>
+                </div>
             </div>
 
             {sessions.length === 0 ? (
                 <div className="text-center text-gray-500 mt-20">
                     <p className="text-xl mb-2">No sessions yet</p>
                     <p className="text-sm">
-                        Click <span className="font-semibold text-blue-600">+ New Session</span> to create your first one.
+                        Click{" "}
+                        <span className="font-semibold text-blue-600">+ New Session</span>{" "}
+                        to create your first one.
                     </p>
                 </div>
             ) : (
@@ -52,8 +78,7 @@ export default function MySessions() {
 
                             {/* Status Badge */}
                             <span
-                                className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-3
-                                    ${s.status === "published"
+                                className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-3 ${s.status === "published"
                                         ? "bg-green-100 text-green-700"
                                         : "bg-yellow-100 text-yellow-700"
                                     }`}
