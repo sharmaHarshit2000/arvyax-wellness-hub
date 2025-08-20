@@ -2,7 +2,8 @@ import Session from "../models/Session.js";
 
 export const getSessions = async (req, res) => {
   try {
-    const sessions = await Session.find({ status: "published" });
+    const sessions = await Session.find({ status: "published" })
+    .sort({ updated_at: -1 });;
     res.json(sessions);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -11,7 +12,8 @@ export const getSessions = async (req, res) => {
 
 export const getMySessions = async (req, res) => {
   try {
-    const sessions = await Session.find({ user_id: req.userId });
+    const sessions = await Session.find({ user_id: req.userId })
+    .sort({ updated_at: -1 });;
     res.json(sessions);
   } catch (err) {
     res.status(500).json({ message: err.message });
